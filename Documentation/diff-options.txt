@@ -304,6 +304,10 @@ dimmed_zebra::
 	Ignore whitespace when comparing lines when performing the move
 	detection for --color-moved.  This ignores differences even if
 	one line has whitespace where the other line has none.
+--color-moved-[no-]ignore-space-prefix-delta::
+	Ignores whitespace when comparing lines when performing the move
+	detection for --color-moved. This ignores uniform differences
+	of white space at the beginning lines in moved blocks.
 
 --word-diff[=<mode>]::
 	Show a word diff, using the <mode> to delimit changed words.
