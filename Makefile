@@ -2123,6 +2123,7 @@ GIT-PERL-HEADER: $(PERL_HEADER_TEMPLATE) GIT-PERL-DEFINES Makefile
 	    $< >$@+ && \
 	mv $@+ $@
 
+.PHONY: perllibdir
 perllibdir:
 	@echo '$(perllibdir_SQ)'
 
