@@ -252,7 +252,7 @@ static int add_cacheinfo(struct merge_options *o,
 	struct cache_entry *ce;
 	int ret;
 
-	ce = make_cache_entry(mode, oid ? oid->hash : null_sha1, path, stage, 0);
+	ce = make_index_cache_entry(&the_index, mode, oid ? oid->hash : null_sha1, path, stage, 0);
 	if (!ce)
 		return err(o, _("addinfo_cache failed for path '%s'"), path);
 
