@@ -63,4 +63,6 @@ void mem_pool_combine(struct mem_pool *dst, struct mem_pool *src);
  */
 int mem_pool_contains(struct mem_pool *mem_pool, void *mem);
 
+int should_validate_cache_entries(void);
+
 #endif

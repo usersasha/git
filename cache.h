@@ -369,6 +369,13 @@ void discard_index_cache_entry(struct cache_entry *ce);
  */
 void discard_transient_cache_entry(struct cache_entry *ce);
 
+/*
+ * Validate the cache entries in the index.  This is an internal
+ * consistency check that the cache_entry structs are allocated from
+ * the expected memory pool.
+ */
+void validate_cache_entries(const struct index_state *istate);
+
 #ifndef NO_THE_INDEX_COMPATIBILITY_MACROS
 #define active_cache (the_index.cache)
 #define active_nr (the_index.cache_nr)

@@ -60,19 +60,41 @@ void mem_pool_discard(struct mem_pool *mem_pool)
 {
 	int i;
 	struct mp_block *block, *block_to_free;
+	int invalidate_memory = should_validate_cache_entries();
+
 	for (block = mem_pool->mp_block; block;)
 	{
 		block_to_free = block;
 		block = block->next_block;
+
+		if (invalidate_memory)
+			memset(block_to_free->space, 0xDD, ((char *)block_to_free->end) - ((char *)block_to_free->space));
+
 		free(block_to_free);
 	}
 
-	for (i = 0; i < mem_pool->nr; i++)
+	for (i = 0; i < mem_pool->nr; i++) {
+		memset(mem_pool->custom[i], 0xDD, ((char *)mem_pool->custom_end[i]) - ((char *)mem_pool->custom[i]));
 		free(mem_pool->custom[i]);
+	}
 
 	free(mem_pool->custom);
 	free(mem_pool->custom_end);
 	free(mem_pool);
+}
+
+int should_validate_cache_entries(void)
+{
+	static int validate_index_cache_entries = -1;
+
+	if (validate_index_cache_entries < 0) {
+		if (getenv("GIT_TEST_VALIDATE_INDEX_CACHE_ENTRIES"))
+			validate_index_cache_entries = 1;
+		else
+			validate_index_cache_entries = 0;
+	}
+
+	return validate_index_cache_entries;
 }
 
 void *mem_pool_alloc(struct mem_pool *mem_pool, size_t len)
