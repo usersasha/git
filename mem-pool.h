@@ -19,7 +19,26 @@ struct mem_pool {
 
 	/* The total amount of memory allocated by the pool. */
 	size_t pool_alloc;
+
+	/*
+	 * Array of pointers to "custom size" memory allocations.
+	 * This is used for "large" memory allocations.
+	 * The *_end variables are used to track the range of memory
+	 * allocated.
+	 */
+	void **custom, **custom_end;
+	int nr, nr_end, alloc, alloc_end;
 };
+
+/*
+ * Initialize mem_pool specified initial.
+ */
+void mem_pool_init(struct mem_pool **mem_pool, size_t initial_size);
+
+/*
+ * Discard a memory pool and free all the memory it is responsible for.
+ */
+void mem_pool_discard(struct mem_pool *mem_pool);
 
 /*
  * Alloc memory from the mem_pool.
@@ -30,5 +49,18 @@ void *mem_pool_alloc(struct mem_pool *pool, size_t len);
  * Allocate and zero memory from the memory pool.
  */
 void *mem_pool_calloc(struct mem_pool *pool, size_t count, size_t size);
+
+/*
+ * Move the memory associated with the 'src' pool to the 'dst' pool. The 'src'
+ * pool will be empty and not contain any memory. It still needs to be free'd
+ * with a call to `mem_pool_discard`.
+ */
+void mem_pool_combine(struct mem_pool *dst, struct mem_pool *src);
+
+/*
+ * Check if a memory pointed at by 'mem' is part of the range of
+ * memory managed by the specified mem_pool.
+ */
+int mem_pool_contains(struct mem_pool *mem_pool, void *mem);
 
 #endif
