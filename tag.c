@@ -3,6 +3,7 @@
 #include "commit.h"
 #include "tree.h"
 #include "blob.h"
+#include "alloc.h"
 #include "gpg-interface.h"
 
 const char *tag_type = "tag";
@@ -113,6 +114,11 @@ static timestamp_t parse_tag_date(const char *buf, const char *tail)
 		return 0;
 	/* dateptr < buf && buf[-1] == '\n', so parsing will stop at buf-1 */
 	return parse_timestamp(dateptr, NULL, 10);
+}
+
+void free_tag_buffer(struct tag *t)
+{
+	free(t->tag);
 }
 
 int parse_tag_buffer(struct tag *item, const void *data, unsigned long size)
