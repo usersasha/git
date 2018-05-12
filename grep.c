@@ -1422,12 +1422,24 @@ static void show_line(struct grep_opt *opt, char *bol, char *eol,
 			opt->output(opt, "\n", 1);
 		}
 	}
+	if (opt->only_matching && sign != ':') {
+		/*
+		 * If we're given '--only-matching' and the line is a contextual
+		 * one (i.e., we're given '-A', '-B', or '-C'), mark the line as
+		 * shown (to advance opt->last_shown), but do not show it (since
+		 * we are given '--only-matching').
+		 */
+		opt->last_shown = lno;
+		return;
+	}
 	show_line_header(opt, name, lno, cno, sign);
-	if (opt->color) {
+	if (opt->color || opt->only_matching) {
 		regmatch_t match;
 		enum grep_context ctx = GREP_CONTEXT_BODY;
 		int ch = *eol;
 		int eflags = 0;
+		int first = 1;
+		int offset = 1;
 
 		if (sign == ':')
 			match_color = opt->color_match_selected;
@@ -1444,16 +1456,32 @@ static void show_line(struct grep_opt *opt, char *bol, char *eol,
 			if (match.rm_so == match.rm_eo)
 				break;
 
-			output_color(opt, bol, match.rm_so, line_color);
+			if (!opt->only_matching) {
+				output_color(opt, bol, match.rm_so, line_color);
+			} else if (!first) {
+				/*
+				 * We are given --only-matching, and this is not
+				 * the first match on a line. Reprint the
+				 * newline and header before showing another
+				 * match.
+				 */
+				opt->output(opt, "\n", 1);
+				show_line_header(opt, name, lno,
+					opt->extended ? 0 : offset+match.rm_so,
+					sign);
+			}
 			output_color(opt, bol + match.rm_so,
 				     match.rm_eo - match.rm_so, match_color);
+			offset += match.rm_eo;
 			bol += match.rm_eo;
 			rest -= match.rm_eo;
 			eflags = REG_NOTBOL;
+			first = 0;
 		}
 		*eol = ch;
 	}
-	output_color(opt, bol, rest, line_color);
+	if (!opt->only_matching)
+		output_color(opt, bol, rest, line_color);
 	opt->output(opt, "\n", 1);
 }
 
