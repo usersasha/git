@@ -1402,9 +1402,10 @@ static void show_line(struct grep_opt *opt, char *bol, char *eol,
 	/*
 	 * Treat 'cno' as the 1-indexed offset from the start of a non-context
 	 * line to its first match. Otherwise, 'cno' is 0 indicating that we are
-	 * being called with a context line.
+	 * being called with a context line, or we are --extended, and cannot
+	 * always show an answer.
 	 */
-	if (opt->columnnum && cno) {
+	if (opt->columnnum && sign == ':' && !opt->extended) {
 		char buf[32];
 		xsnprintf(buf, sizeof(buf), "%d", cno);
 		output_color(opt, buf, strlen(buf), opt->color_columnno);
