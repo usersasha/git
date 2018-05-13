@@ -18,12 +18,16 @@ struct commit_list {
 
 struct commit {
 	struct object object;
-	void *util;
 	unsigned int index;
 	timestamp_t date;
 	struct commit_list *parents;
 	struct tree *tree;
 	uint32_t graph_pos;
+	/*
+	 * Do not add more fields here unless it's _very_ often
+	 * used. Use commit-slab to associate more data with a commit
+	 * instead.
+	 */
 };
 
 extern int save_commit_buffer;
