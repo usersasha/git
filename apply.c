@@ -136,6 +136,8 @@ int check_apply_state(struct apply_state *state, int force_apply)
 		state->apply = 0;
 	if (state->check_index && is_not_gitdir)
 		return error(_("--index outside a repository"));
+	if (state->set_ita && is_not_gitdir)
+		state->set_ita = 0;
 	if (state->cached) {
 		if (is_not_gitdir)
 			return error(_("--cached outside a repository"));
@@ -4265,9 +4267,6 @@ static int add_index_file(struct apply_state *state,
 	int namelen = strlen(path);
 	unsigned ce_size = cache_entry_size(namelen);
 
-	if (!state->update_index)
-		return 0;
-
 	ce = xcalloc(1, ce_size);
 	memcpy(ce->name, path, namelen);
 	ce->ce_mode = create_ce_mode(mode);
@@ -4297,6 +4296,27 @@ static int add_index_file(struct apply_state *state,
 				       "for newly created file %s"), path);
 		}
 	}
+	if (add_cache_entry(ce, ADD_CACHE_OK_TO_ADD) < 0) {
+		free(ce);
+		return error(_("unable to add cache entry for %s"), path);
+	}
+
+	return 0;
+}
+
+static int add_ita_file(struct apply_state *state,
+			const char *path, unsigned mode)
+{
+	struct cache_entry *ce;
+	int namelen = strlen(path);
+	unsigned ce_size = cache_entry_size(namelen);
+
+	ce = xcalloc(1, ce_size);
+	memcpy(ce->name, path, namelen);
+	ce->ce_mode = create_ce_mode(mode);
+	ce->ce_flags = create_ce_flags(0) | CE_INTENT_TO_ADD;
+	ce->ce_namelen = namelen;
+	set_object_name_for_intent_to_add_entry(ce);
 	if (add_cache_entry(ce, ADD_CACHE_OK_TO_ADD) < 0) {
 		free(ce);
 		return error(_("unable to add cache entry for %s"), path);
@@ -4465,8 +4485,11 @@ static int create_file(struct apply_state *state, struct patch *patch)
 
 	if (patch->conflicted_threeway)
 		return add_conflicted_stages_file(state, patch);
-	else
+	else if (state->update_index)
 		return add_index_file(state, path, mode, buf, size);
+	else if (state->set_ita)
+		return add_ita_file(state, path, mode);
+	return 0;
 }
 
 /* phase zero is to remove, phase one is to create */
@@ -4687,7 +4710,8 @@ static int apply_patch(struct apply_state *state,
 		state->apply = 0;
 
 	state->update_index = state->check_index && state->apply;
-	if (state->update_index && !is_lock_file_locked(&state->lock_file)) {
+	if ((state->update_index || state->set_ita) &&
+	    !is_lock_file_locked(&state->lock_file)) {
 		if (state->index_file)
 			hold_lock_file_for_update(&state->lock_file,
 						  state->index_file,
@@ -4888,7 +4912,7 @@ int apply_all_patches(struct apply_state *state,
 				state->whitespace_error);
 	}
 
-	if (state->update_index) {
+	if (state->update_index || state->set_ita) {
 		res = write_locked_index(&the_index, &state->lock_file, COMMIT_LOCK);
 		if (res) {
 			error(_("Unable to write new index file"));
@@ -4941,6 +4965,8 @@ int apply_parse_options(int argc, const char **argv,
 			N_("instead of applying the patch, see if the patch is applicable")),
 		OPT_BOOL(0, "index", &state->check_index,
 			N_("make sure the patch is applicable to the current index")),
+		OPT_BOOL('N', "intent-to-add", &state->set_ita,
+			N_("mark new files with `git add --intent-to-add`")),
 		OPT_BOOL(0, "cached", &state->cached,
 			N_("apply a patch without touching the working tree")),
 		OPT_BOOL_F(0, "unsafe-paths", &state->unsafe_paths,
