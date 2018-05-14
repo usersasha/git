@@ -73,16 +73,31 @@ void move_cache_to_base_index(struct index_state *istate)
 	int i;
 
 	/*
-	 * do not delete old si->base, its index entries may be shared
-	 * with istate->cache[]. Accept a bit of leaking here because
-	 * this code is only used by short-lived update-index.
+	 * If there was a previous base index, then transfer ownership of allocated
+	 * entries to the parent index.
 	 */
+	if (si->base &&
+		si->base->ce_mem_pool) {
+
+		if (!istate->ce_mem_pool)
+			mem_pool_init(&istate->ce_mem_pool, 0);
+
+		mem_pool_combine(istate->ce_mem_pool, istate->split_index->base->ce_mem_pool);
+	}
+
 	si->base = xcalloc(1, sizeof(*si->base));
 	si->base->version = istate->version;
 	/* zero timestamp disables racy test in ce_write_index() */
 	si->base->timestamp = istate->timestamp;
 	ALLOC_GROW(si->base->cache, istate->cache_nr, si->base->cache_alloc);
 	si->base->cache_nr = istate->cache_nr;
+
+	/*
+	 * The mem_pool needs to move with the allocated entries.
+	 */
+	si->base->ce_mem_pool = istate->ce_mem_pool;
+	istate->ce_mem_pool = NULL;
+
 	COPY_ARRAY(si->base->cache, istate->cache, istate->cache_nr);
 	mark_base_index_entries(si->base);
 	for (i = 0; i < si->base->cache_nr; i++)
@@ -123,7 +138,7 @@ static void replace_entry(size_t pos, void *data)
 	src->ce_flags |= CE_UPDATE_IN_BASE;
 	src->ce_namelen = dst->ce_namelen;
 	copy_cache_entry(dst, src);
-	free(src);
+	discard_index_cache_entry(src);
 	si->nr_replacements++;
 }
 
@@ -224,7 +239,7 @@ void prepare_to_write_split_index(struct index_state *istate)
 			base->ce_flags = base_flags;
 			if (ret)
 				ce->ce_flags |= CE_UPDATE_IN_BASE;
-			free(base);
+			discard_index_cache_entry(base);
 			si->base->cache[ce->index - 1] = ce;
 		}
 		for (i = 0; i < si->base->cache_nr; i++) {
@@ -301,7 +316,7 @@ void save_or_free_index_entry(struct index_state *istate, struct cache_entry *ce
 	    ce == istate->split_index->base->cache[ce->index - 1])
 		ce->ce_flags |= CE_REMOVE;
 	else
-		free(ce);
+		discard_index_cache_entry(ce);
 }
 
 void replace_index_entry_in_base(struct index_state *istate,
@@ -314,7 +329,7 @@ void replace_index_entry_in_base(struct index_state *istate,
 	    old_entry->index <= istate->split_index->base->cache_nr) {
 		new_entry->index = old_entry->index;
 		if (old_entry != istate->split_index->base->cache[new_entry->index - 1])
-			free(istate->split_index->base->cache[new_entry->index - 1]);
+			discard_index_cache_entry(istate->split_index->base->cache[new_entry->index - 1]);
 		istate->split_index->base->cache[new_entry->index - 1] = new_entry;
 	}
 }
@@ -330,6 +345,8 @@ void add_split_index(struct index_state *istate)
 void remove_split_index(struct index_state *istate)
 {
 	if (istate->split_index) {
+		mem_pool_combine(istate->ce_mem_pool, istate->split_index->base->ce_mem_pool);
+
 		/*
 		 * can't discard_split_index(&the_index); because that
 		 * will destroy split_index->base->cache[], which may
