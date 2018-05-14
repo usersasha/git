@@ -21,7 +21,6 @@ struct commit_list {
 
 struct commit {
 	struct object object;
-	void *util;
 	timestamp_t date;
 	struct commit_list *parents;
 
@@ -34,6 +33,11 @@ struct commit {
 	uint32_t graph_pos;
 	uint32_t generation;
 	unsigned int index;
+	/*
+	 * Do not add more fields here unless it's _very_ often
+	 * used. Use commit-slab to associate more data with a commit
+	 * instead.
+	 */
 };
 
 extern int save_commit_buffer;
@@ -322,7 +326,7 @@ struct merge_remote_desc {
 	struct object *obj; /* the named object, could be a tag */
 	char name[FLEX_ARRAY];
 };
-#define merge_remote_util(commit) ((struct merge_remote_desc *)((commit)->util))
+extern struct merge_remote_desc *merge_remote_util(struct commit *);
 extern void set_merge_remote_desc(struct commit *commit,
 				  const char *name, struct object *obj);
 
