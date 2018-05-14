@@ -1408,6 +1408,16 @@ credential.<url>.*::
 credentialCache.ignoreSIGHUP::
 	Tell git-credential-cache--daemon to ignore SIGHUP, instead of quitting.
 
+completion.commands::
+	This is only used by git-completion.bash to add or remove
+	commands from the complete list. Normally only porcelain
+	commands and a few select others are in the complete list. You
+	can add more commands, separated by space, in this
+	variable. Prefixing the command with '-' will remove it from
+	the existing list.
++
+This variable should not be per-repository.
+
 include::diff-config.txt[]
 
 difftool.<tool>.path::
