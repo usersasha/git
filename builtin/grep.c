@@ -849,6 +849,7 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 			N_("print empty line between matches from different files")),
 		OPT_BOOL(0, "heading", &opt.heading,
 			N_("show filename only once above matches from same file")),
+		OPT_BOOL('o', "only-matching", &opt.only_matching, N_("show only matches")),
 		OPT_GROUP(""),
 		OPT_CALLBACK('C', "context", &opt, N_("n"),
 			N_("show <n> context lines before and after matches"),

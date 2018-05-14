@@ -1432,6 +1432,75 @@ test_expect_success 'grep --heading' '
 	test_cmp expected actual
 '
 
+test_expect_success 'grep --only-matching' '
+	cat >expected <<-\EOF &&
+	file:1:5:mmap
+	file:2:5:mmap
+	file:3:5:mmap
+	file:3:14:mmap
+	file:4:5:mmap
+	file:4:14:mmap
+	file:5:5:mmap
+	file:5:14:mmap
+	EOF
+	git grep --only-matching --line-number --column mmap file >actual &&
+	test_cmp expected actual
+'
+
+test_expect_success 'grep --only-matching --column (unsupported)' '
+	cat >expected <<-\EOF &&
+	file:mmap
+	file:mmap
+	file:mmap
+	file:mmap
+	file:mmap
+	file:mmap
+	file:mmap
+	file:mmap
+	EOF
+	git grep --only-matching --column --not --not -e mmap -- file >actual &&
+	test_cmp expected actual
+'
+
+test_expect_success 'grep --only-matching -C' '
+	cat >expected <<-\EOF &&
+	hello.ps1:function
+	hello.ps1:function
+	--
+	hello.ps1:function
+	EOF
+	git grep --only-matching -C1 function hello.ps1 >actual &&
+	test_cmp expected actual
+'
+
+test_expect_success 'grep --only-matching --heading' '
+	cat >expected <<-\EOF &&
+	file
+	1:5:mmap
+	2:5:mmap
+	3:5:mmap
+	3:14:mmap
+	4:5:mmap
+	4:14:mmap
+	5:5:mmap
+	5:14:mmap
+	EOF
+	git grep --only-matching --heading --line-number --column mmap file >actual &&
+	test_cmp expected actual
+'
+
+test_expect_success 'grep --only-matching -i' '
+	cat >expected <<-\EOF &&
+	hello_world:1:1:Hello
+	hello_world:2:1:HeLLo
+	hello_world:3:1:Hello
+	hello_world:4:1:HeLLo
+	EOF
+	git grep --only-matching --line-number --column \
+		-i hello hello_world >actual &&
+	test_cmp expected actual
+'
+
 cat >expected <<EOF
 <BOLD;GREEN>hello.c<RESET>
 4:int main(int argc, const <BLACK;BYELLOW>char<RESET> **argv)

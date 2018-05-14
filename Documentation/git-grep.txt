@@ -20,7 +20,7 @@ SYNOPSIS
 	   [-c | --count] [--all-match] [-q | --quiet]
 	   [--max-depth <depth>]
 	   [--color[=<when>] | --no-color]
-	   [--break] [--heading] [-p | --show-function]
+	   [--break] [--heading] [-o | --only-matching] [-p | --show-function]
 	   [-A <post-context>] [-B <pre-context>] [-C <context>]
 	   [-W | --function-context]
 	   [--threads <num>]
@@ -222,6 +222,10 @@ providing this option will cause it to die.
 --heading::
 	Show the filename above the matches in that file instead of
 	at the start of each shown line.
+
+--o::
+--only-matching::
+	Prints only the matching part of the lines.
 
 -p::
 --show-function::
