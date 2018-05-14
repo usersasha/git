@@ -157,13 +157,19 @@ reschedule_last_action () {
 append_todo_help () {
 	gettext "
 Commands:
-p, pick = use commit
-r, reword = use commit, but edit the commit message
-e, edit = use commit, but stop for amending
-s, squash = use commit, but meld into previous commit
-f, fixup = like \"squash\", but discard this commit's log message
-x, exec = run command (the rest of the line) using shell
-d, drop = remove commit
+p, pick <commit> = use commit
+r, reword <commit> = use commit, but edit the commit message
+e, edit <commit> = use commit, but stop for amending
+s, squash <commit> = use commit, but meld into previous commit
+f, fixup <commit> = like \"squash\", but discard this commit's log message
+x, exec <commit> = run command (the rest of the line) using shell
+d, drop <commit> = remove commit
+l, label <label> = label current HEAD with a name
+t, reset <label> = reset HEAD to a label
+m, merge [-C <commit> | -c <commit>] <label> [# <oneline>]
+.       create a merge commit using the original merge commit's
+.       message (or the oneline, if no original merge commit was
+.       specified). Use -c <commit> to reword the commit message.
 
 These lines can be re-ordered; they are executed from top to bottom.
 " | git stripspace --comment-lines >>"$todo"
@@ -890,6 +896,8 @@ init_revisions_and_shortrevisions () {
 	else
 		revisions=$onto...$orig_head
 		shortrevisions=$shorthead
+		test -z "$squash_onto" ||
+		echo "$squash_onto" >"$state_dir"/squash-onto
 	fi
 }
 
@@ -944,7 +952,7 @@ EOF
 	die "Could not skip unnecessary pick commands"
 
 	checkout_onto
-	if test -z "$rebase_root" && test ! -d "$rewritten"
+	if test ! -d "$rewritten"
 	then
 		require_clean_work_tree "rebase"
 		exec git rebase--helper ${force_rebase:+--no-ff} $allow_empty_message \
@@ -966,6 +974,8 @@ git_rebase__interactive () {
 	init_revisions_and_shortrevisions
 
 	git rebase--helper --make-script ${keep_empty:+--keep-empty} \
+		${rebase_merges:+--rebase-merges} \
+		${rebase_cousins:+--rebase-cousins} \
 		$revisions ${restrict_revision+^$restrict_revision} >"$todo" ||
 	die "$(gettext "Could not generate todo list")"
 
