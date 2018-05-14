@@ -21,6 +21,7 @@
 /git-bisect--helper
 /git-blame
 /git-branch
+/git-branch-diff
 /git-bundle
 /git-cat-file
 /git-check-attr

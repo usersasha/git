@@ -1615,6 +1615,24 @@ _git_format_patch ()
 	__git_complete_revlist
 }
 
+__git_branch_diff_options="
+	--no-patches --creation-weight= --dual-color
+"
+
+_git_branch_diff ()
+{
+	case "$cur" in
+	--*)
+		__gitcomp "
+			$__git_branch_diff_options
+			$__git_diff_common_options
+			"
+		return
+		;;
+	esac
+	__git_complete_revlist
+}
+
 _git_fsck ()
 {
 	case "$cur" in
