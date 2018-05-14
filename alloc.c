@@ -110,6 +110,7 @@ void *alloc_commit_node(struct repository *r)
 	c->object.type = OBJ_COMMIT;
 	c->index = alloc_commit_index(r);
 	c->graph_pos = COMMIT_NOT_FROM_GRAPH;
+	c->generation = GENERATION_NUMBER_INFINITY;
 	return c;
 }
 
